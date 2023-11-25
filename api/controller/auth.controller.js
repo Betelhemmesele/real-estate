@@ -1,9 +1,9 @@
 import Users from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv';
 import { errorHandler } from '../utils/error.js';
-import { response } from 'express';
+// import { response } from 'express';
 export const signup =async(req,res,next)=>{
     const { username, email, password } = req.body;
     const hashedPassword = bcryptjs.hashSync(password, 10);
@@ -12,7 +12,7 @@ export const signup =async(req,res,next)=>{
       await newUser.save();
       res.status(201).json('User created successfully!');
     } catch (error) {
-      next(errorHandler(550,'error form the function'));
+      next(errorHandler(550,'error from the function'));
     }
 };
 export const signin =async(req,res,next)=>{
