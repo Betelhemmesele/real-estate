@@ -6,7 +6,10 @@ import{updateUserStart,
   updateUserFailure,
   deleteUserFailure,
   deleteUserStart,
-  deleteUserSuccess
+  deleteUserSuccess,
+  signOutUserFailure,
+  signOutUserStart,
+  signOutUserSuccess,
 } from '../../redux/user/userSlice';
 import {getStorage,ref, getDownloadURL,uploadBytesResumable} from 'firebase/storage';
 export default function Profile() {
@@ -19,11 +22,6 @@ export default function Profile() {
  const [formData, setFormData] = useState({});
  const [showConfirmation, setShowConfirmation] = useState(false);
  const dispatch=useDispatch();
-//  console.log(filePerc)
-//  console.log("file",file);
-//  console.log(fileUploadError);
-//  console.log("current",currentUser);
-//  console.log("username",currentUser.username);
  useEffect(()=>{
   if (file){
     handleFileUpload(file);
@@ -106,8 +104,21 @@ const openConfirmation = () => {
 const closeConfirmation = () => {
   setShowConfirmation(false);
 };
+const handleSignOut = async () => {
+   try {
+    dispatch(signOutUserStart());
+    const res=await fetch('/api/auth/signout');
+    const data = await res.json();
+    if (data.success === false) {
+      dispatch(signOutUserFailure(data.message));
+      return;
+    }
 
-  
+    dispatch(signOutUserSuccess(data));
+   } catch (error) {
+    dispatch(signOutUserFailure(error.message));
+   }
+};
  console.log("form data",formData);
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -171,7 +182,7 @@ const closeConfirmation = () => {
         </div>
       </div>
     )}
-        <span className="text-red-700 cursor-pointer">Sign out </span>
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">Sign out </span>
       </div>
       {/* <p className='text-red-700 mt-5'> {error? error:" "}</p> */}
       <p> {updateSuccess? 'user updated successfully':" "}</p>
