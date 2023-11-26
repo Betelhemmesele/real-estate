@@ -3,22 +3,27 @@ import { useSelector ,useDispatch} from "react-redux";
 import {app} from '../firebase';
 import{updateUserStart,
   updateUserSuccess,
-  updateUserFailure,} from '../../redux/user/userSlice';
+  updateUserFailure,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess
+} from '../../redux/user/userSlice';
 import {getStorage,ref, getDownloadURL,uploadBytesResumable} from 'firebase/storage';
 export default function Profile() {
- const {currentUser,error,loading}=useSelector((state)=>state.user);
+ const {currentUser,loading}=useSelector((state)=>state.user);
  const fileRef=useRef(null);
  const [file,setFile]=useState(undefined);
  const [filePerc,setFilePerc]=useState(0); 
  const [updateSuccess,setUpdateSuccess]=useState(false);
  const [fileUploadError, setFileUploadError] = useState(false);
  const [formData, setFormData] = useState({});
+ const [showConfirmation, setShowConfirmation] = useState(false);
  const dispatch=useDispatch();
- console.log(filePerc)
- console.log("file",file);
- console.log(fileUploadError);
- console.log("current",currentUser);
- console.log("username",currentUser.username);
+//  console.log(filePerc)
+//  console.log("file",file);
+//  console.log(fileUploadError);
+//  console.log("current",currentUser);
+//  console.log("username",currentUser.username);
  useEffect(()=>{
   if (file){
     handleFileUpload(file);
@@ -75,7 +80,34 @@ export default function Profile() {
     dispatch(updateUserFailure(error.message));
   }
 };
+const handleDelete = async (e) => {
+  e.preventDefault();
+  setShowConfirmation(false); 
+  try {
+    dispatch(deleteUserStart());
+    const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (data.success === false) {
+      dispatch(deleteUserFailure(data.message));
+      return;
+    }
 
+    dispatch(deleteUserSuccess(data));
+  } catch (error) {
+    dispatch(deleteUserFailure(error.message));
+  }
+}
+const openConfirmation = () => {
+  setShowConfirmation(true);
+};
+
+const closeConfirmation = () => {
+  setShowConfirmation(false);
+};
+
+  
  console.log("form data",formData);
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -116,10 +148,32 @@ export default function Profile() {
           disabled:opacity-80" >{loading? 'Loading...':'Update'}</button>
       </form>
       <div className="flex justify-between">
-        <span className="text-red-700 cursor-pointer">Delete account</span> 
+        <span onClick={openConfirmation} className="text-red-700 cursor-pointer">Delete account</span> 
+        {/* Confirmation dialog */}
+        {showConfirmation && (
+      <div className="fixed inset-0 flex items-center justify-center rounded-lg bg-gray-900 bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-lg text-gray-800">Are you sure you want to delete your account?</p>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2  bg-red-400 text-white rounded hover:bg-red-600"
+            >
+              Yes
+            </button>
+            <button
+              onClick={closeConfirmation}
+              className="ml-2 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+            >
+              No
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
         <span className="text-red-700 cursor-pointer">Sign out </span>
       </div>
-      <p className='text-red-700 mt-5'> {error? error:" "}</p>
+      {/* <p className='text-red-700 mt-5'> {error? error:" "}</p> */}
       <p> {updateSuccess? 'user updated successfully':" "}</p>
       </div>
   )
