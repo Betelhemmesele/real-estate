@@ -13,6 +13,7 @@ import{updateUserStart,
   signOutUserSuccess,
 } from '../../redux/user/userSlice';
 import {getStorage,ref, getDownloadURL,uploadBytesResumable} from 'firebase/storage';
+
 export default function Profile() {
  const {currentUser,loading}=useSelector((state)=>state.user);
  const fileRef=useRef(null);
@@ -21,8 +22,11 @@ export default function Profile() {
  const [updateSuccess,setUpdateSuccess]=useState(false);
  const [fileUploadError, setFileUploadError] = useState(false);
  const [formData, setFormData] = useState({});
+ const [showListingError, setShowListingError] = useState(false);
  const [showConfirmation, setShowConfirmation] = useState(false);
+ const [userListings,setUserListings]=useState([]);
  const dispatch=useDispatch();
+ console.log(showListingError)
  useEffect(()=>{
   if (file){
     handleFileUpload(file);
@@ -120,6 +124,20 @@ const handleSignOut = async () => {
     dispatch(signOutUserFailure(error.message));
    }
 };
+const handleShowListings = async ()=>{
+  try {
+    setShowListingError(false);
+    const res= await fetch (`/api/user/listings/${currentUser._id}`);
+    const data =await res.json();
+    if(data.success === false){
+      setShowListingError(true);
+      return;
+    }
+    setUserListings(data);
+  } catch (error) {
+    setShowListingError(true);
+  }
+}
  console.log("form data",formData);
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -194,6 +212,28 @@ const handleSignOut = async () => {
       </div>
       {/* <p className='text-red-700 mt-5'> {error? error:" "}</p> */}
       <p> {updateSuccess? 'user updated successfully':" "}</p>
+      <button onClick={handleShowListings} className='text-green-700 w-full'>Show Listing</button>
+      <p className='text-red-700 mt-5'>{showListingError? 'Error showing listings':""}</p>
+      {userListings && userListings.length > 0 &&
+      <div className='flex flex-col gap-4'>
+         {userListings.map((listing) => (
+           <div  key={listing._id} className='border rounded-lg p-3 gap-2
+           flex justify-between'>
+               <Link to={`/listing/${listing._id}`}>
+                <img src={listing.imageUrls[0]} alt="image"
+                 className='h-16 w-16 object-contain border rounded-lg'/>
+               </Link>
+               <Link to={`/listing/${listing._id}`}>
+                <p className='text-slate-700 font-semibold hover:underline truncate flex-1'>{listing.name}</p>
+                </Link>
+                <div className='flex flex-col items-center'>
+                  <button className='text-red-700'>DELETE</button>
+                  <button className='text-green-700'>EDIT</button>
+                </div>
+           </div>
+      ))}
       </div>
-  )
+}
+      </div>
+  );
 }
